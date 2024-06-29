@@ -119,8 +119,8 @@ def take_screenshot(stop_event, model):
                 
 
             
-    play_game(decision)
-    time.sleep(0.1)   # Add a delay to avoid over-clicking
+        play_game(decision)
+        time.sleep(0.1)   # Add a delay to avoid over-clicking
 
 # Main function
 def main():
