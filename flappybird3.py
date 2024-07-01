@@ -9,14 +9,49 @@ from operator import itemgetter
 
 xrand=random.randint(1516,1845)
 yrand=random.randint(245,623)
+#decisive functions
+def maintain():
+    pyautogui.click(xrand,yrand)
+    time.sleep(0.4)
 
-# Function to play the game
+def maintaincenter(decision):
+    if decision["bird"]==True and decision["ground"]==True and decision["roof"]==True:
+        if decision["bird_coords"][0][3] > (decision["ground_coords"][0][1]-decision["roof_coords"][0][3])/2:
+            pass
+        elif decision["bird_coords"][0][3] == (decision["ground_coords"][0][1]-decision["roof_coords"][0][3])/2:
+            time.sleep(0.4)
+            pyautogui.click(xrand,yrand)
+        elif decision["bird_coords"][0][3] < (decision["ground_coords"][0][1]-decision["roof_coords"][0][3])/2:
+            pyautogui.click(xrand,yrand)
+    else:
+        maintain()
+def compare(decision):
+    if len(decision["pillar_coords"])==1:
+        if decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][0][3])):
+            pass
+        elif decision["bird_coords"][0][1] not in range(int(decision["pillar_coords"][0][3]+10)):
+            maintain()
+
+    elif len(decision["pillar_coord"])==2:
+        if decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][0][3])) :
+            pass
+        elif decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][1][1]), int(decision["pillar_coords"][1][3])):
+            pyautogui.click(xrand,yrand)
+        elif decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][1][1]+10), int(decision["pillar_coords"][1][3])):
+            pyautogui.doubleClick(xrand,yrand)
+        elif decision["bird_coords"][0][1] not in range(int(decision["pillar_coords"][0][3]+10)) and decision["bird_coords"][0][1] not in range(int(decision["pillar_coords"][1][1]), int(decision["pillar_coords"][1][3])):
+            maintain()
+
+
+#Function to play the game
 def play_game(decision):
-        time.sleep(0.5)
-        pyautogui.moveTo((xrand,yrand))
-        pyautogui.click((xrand,yrand))
-        print('clicking')
+        if decision["bird"]==True and decision["pillar"]==False:
+            maintaincenter(decision)
+        elif decision["bird"]==True and decision["pillar"]==True:
+            compare(decision)
         
+        
+            
 
 # Function to take screenshots
 def take_screenshot(stop_event, model):
@@ -27,21 +62,20 @@ def take_screenshot(stop_event, model):
     while not stop_event.is_set():
         decision = {
             "bird": False,
-            "pillars": False,
+            "pillar": False,
             "roof": False,
             "ground": False,
             "name": False,
             "replay": False,
             "start": False,
-            "pillars_coords":[],
+
+            "bird_coords":[],
+            "pillar_coords":[],
             "roof_coords":[],
             "ground_coords":[],
-            "left_pillars":[],
-            "right_pillars":[],
-            "middlex_pillars":[],
-            "top_pillars":[],
-            "bottom_pillars":[],
-            "middley_pillars":[],
+            "name_coords":[],
+            "replay_coords":[],
+            "start_coords":[]
             
 
         }
@@ -50,7 +84,7 @@ def take_screenshot(stop_event, model):
         screenshot = pyautogui.screenshot()
         screenshot = Image.frombytes('RGB', screenshot.size, screenshot.tobytes())
         
-        results = model([screenshot], conf=.65)  # return a list of Results objects
+        results = model([screenshot], conf=.3)  # return a list of Results objects
         boxes = results[0].boxes.xyxy.tolist()
         classes = results[0].boxes.cls.tolist()
         names = results[0].names
@@ -67,16 +101,16 @@ def take_screenshot(stop_event, model):
             
             if name=="bird":
                 decision["bird"] = True
-                decision["bird_coords"]=[x1,y1,x2,y2]
+                decision["bird_coords"].append([x1,y1,x2,y2])
             elif name=="name":
                 decision["name"] = True
-                decision["name_coords"]=[x1,y1,x2,y2]
+                decision["name_coords"].append([x1,y1,x2,y2])
             elif name=="start":
                 decision["start"] = True
-                decision["start_coords"]=[x1,y1,x2,y2]
+                decision["start_coords"].append([x1,y1,x2,y2])
             elif name=="replay":
                 decision["replay"] = True
-                decision["replay_coords"]=[x1,y1,x2,y2]
+                decision["replay_coords"].append([x1,y1,x2,y2])
             # To get most relevant roof coordinates.
             elif name=="roof":
                 decision["roof"] = True
@@ -97,28 +131,26 @@ def take_screenshot(stop_event, model):
                             decision["ground_coords"].append([x1,y1,x2,y2])
                 else:
                     decision["ground_coords"].append([x1,y1,x2,y2])
-            # To gat pillar coordinates
+            # To get pillar coordinates
             elif name=="pillar":
                 decision["pillar"] = True
-                if x2<center_x-80:
-                    decision["left_pillars"].append([x1,y1,x2,y2])
-                elif x2>=center_x-80 and x2<center_x+45:
-                    decision["middlex_pillars"].append([x1,y1,x2,y2])
-                elif x1>center_x+45:
-                    decision["right_pillars"].append([x1,y1,x2,y2])
-                elif x1<=center_x+45:
-                    decision["middlex_pillars"].append([x1,y1,x2,y2])
-                if y2<center_y-80:
-                    decision["top_pillars"].append([x1,y1,x2,y2])
-                elif y2>=center_y-80 and y2<center_y+45:
-                    decision["middley_pillars"].append([x1,y1,x2,y2])
-                elif y1>center_y+45:
-                    decision["bottom_pillars"].append([x1,y1,x2,y2])
-                elif y1<=center_y+45:
-                    decision["middley_pillars"].append([x1,y1,x2,y2])
-                
-
+                if len(decision["pillar_coords"])!=0:
+                    if decision["bird_coords"][0][2]<=x2:
+                        decision["pillar_coords"].append([x1,y1,x2,y2])
+                else:
+                    decision["pillar_coords"].append([x1,y1,x2,y2])
+            else:
+                pass
+        
+        if decision["bird"]==True and decision["pillar"]==True:
+            if len(decision["pillar_coords"])>1:
+                decision["newpillar"]=sorted(decision["pillar"],key=itemgetter(1))
+        
+        
+        
+        
             
+
         play_game(decision)
         time.sleep(0.1)   # Add a delay to avoid over-clicking
 
