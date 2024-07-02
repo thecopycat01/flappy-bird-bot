@@ -6,15 +6,23 @@ from ultralytics import YOLO
 import random
 import time
 from operator import itemgetter
+import queue
 
 xrand=random.randint(1516,1845)
 yrand=random.randint(245,623)
 #decisive functions
-def maintain():
+def maintain(xrand,yrand):
+    print('maintain')
+    pyautogui.moveTo(xrand,yrand)
     pyautogui.click(xrand,yrand)
-    time.sleep(0.4)
+    time.sleep(0.2)
 
-def maintaincenter(decision):
+
+def maintaincenter(decision,xrand,yrand):
+    print('maintaincenter')
+    print('bird:',decision['bird'])
+    print('ground:',decision['ground'])
+    print('roof:',decision['roof'])
     if decision["bird"]==True and decision["ground"]==True and decision["roof"]==True:
         if decision["bird_coords"][0][3] > (decision["ground_coords"][0][1]-decision["roof_coords"][0][3])/2:
             pass
@@ -22,33 +30,41 @@ def maintaincenter(decision):
             time.sleep(0.4)
             pyautogui.click(xrand,yrand)
         elif decision["bird_coords"][0][3] < (decision["ground_coords"][0][1]-decision["roof_coords"][0][3])/2:
+            pyautogui.moveTo(xrand,yrand)
             pyautogui.click(xrand,yrand)
     else:
         maintain()
-def compare(decision):
+def compare(decision,xrand,yrand):
+    print('compare')
     if len(decision["pillar_coords"])==1:
         if decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][0][3])):
             pass
         elif decision["bird_coords"][0][1] not in range(int(decision["pillar_coords"][0][3]+10)):
-            maintain()
+            maintain(xrand,yrand)
 
-    elif len(decision["pillar_coord"])==2:
+    elif len(decision["pillar_coords"])==2:
         if decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][0][3])) :
             pass
         elif decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][1][1]), int(decision["pillar_coords"][1][3])):
+            pyautogui.moveTo(xrand,yrand)
             pyautogui.click(xrand,yrand)
         elif decision["bird_coords"][0][1] in range(int(decision["pillar_coords"][1][1]+10), int(decision["pillar_coords"][1][3])):
+            pyautogui.moveTo(xrand,yrand)
             pyautogui.doubleClick(xrand,yrand)
         elif decision["bird_coords"][0][1] not in range(int(decision["pillar_coords"][0][3]+10)) and decision["bird_coords"][0][1] not in range(int(decision["pillar_coords"][1][1]), int(decision["pillar_coords"][1][3])):
-            maintain()
+            maintain(xrand,yrand)
+        
 
 
 #Function to play the game
 def play_game(decision):
+        
         if decision["bird"]==True and decision["pillar"]==False:
-            maintaincenter(decision)
+            maintaincenter(decision,xrand,yrand)
         elif decision["bird"]==True and decision["pillar"]==True:
-            compare(decision)
+            compare(decision,xrand,yrand)
+        else:
+            pass
         
         
             
@@ -75,7 +91,8 @@ def take_screenshot(stop_event, model):
             "ground_coords":[],
             "name_coords":[],
             "replay_coords":[],
-            "start_coords":[]
+            "start_coords":[],
+            "new_pillar_coords":[]
             
 
         }
@@ -134,25 +151,25 @@ def take_screenshot(stop_event, model):
             # To get pillar coordinates
             elif name=="pillar":
                 decision["pillar"] = True
-                if len(decision["pillar_coords"])!=0:
-                    if decision["bird_coords"][0][2]<=x2:
-                        decision["pillar_coords"].append([x1,y1,x2,y2])
-                else:
-                    decision["pillar_coords"].append([x1,y1,x2,y2])
+                decision["pillar_coords"].append([x1,y1,x2,y2])
+                
             else:
                 pass
-        
-        if decision["bird"]==True and decision["pillar"]==True:
-            if len(decision["pillar_coords"])>1:
-                decision["newpillar"]=sorted(decision["pillar"],key=itemgetter(1))
-        
-        
-        
-        
-            
+        if len(decision["pillar_coords"])!=0:
+                    if decision["bird"]==True and decision["bird_coords"][0][2]<=x2:
+                        decision["new_pillar_coords"].append([x1,y1,x2,y2])
+        else:
+            pass
 
+
+        if decision["bird"]==True and decision["pillar"]==True:
+            if len(decision["new_pillar_coords"])>1:
+                decision["newpillar"]=sorted(decision["pillar"],key=itemgetter(1))
+        else:
+            pass
+        
         play_game(decision)
-        time.sleep(0.1)   # Add a delay to avoid over-clicking
+        
 
 # Main function
 def main():
