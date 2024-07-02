@@ -1,5 +1,4 @@
 # flappy-bird-bot
-As a college project work I decided to learn to make python bot that utilizes yolov8 objection detection trained model to play flappy bird game.
 
 
 The flappy bird game is actually an android game from an unknown developer
